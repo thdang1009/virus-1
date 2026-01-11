@@ -23,6 +23,8 @@
             display: flex;
             justify-content: center;
             align-items: center;
+            position: fixed;
+            touch-action: none;
         }
 
         #gameContainer {
@@ -95,6 +97,45 @@
             font-weight: bold;
             text-shadow: 0 0 10px #ffbe0b, 0 0 20px #ffbe0b;
             letter-spacing: 1px;
+        }
+
+        /* Mobile responsive adjustments */
+        @media (max-width: 768px) {
+            #score, #level {
+                font-size: 20px;
+                top: 10px;
+                left: 15px;
+            }
+
+            #level {
+                left: auto;
+                right: 15px;
+            }
+
+            #stats, #shots {
+                font-size: 14px;
+                top: 40px;
+                left: 15px;
+            }
+
+            #shots {
+                left: auto;
+                right: 15px;
+            }
+
+            #message {
+                font-size: 32px;
+            }
+
+            #info {
+                font-size: 14px;
+                bottom: 15px;
+            }
+
+            #location {
+                font-size: 18px;
+                bottom: 45px;
+            }
         }
 
         #message {
@@ -234,6 +275,10 @@
             { name: 'SHOPPING CART', image: 'background-10.0' }
         ];
 
+        // Detect mobile device
+        const isMobile = /iPhone|iPad|iPod|Android/i.test(navigator.userAgent) ||
+                        (window.matchMedia && window.matchMedia("(max-width: 768px)").matches);
+
         // Game state
         const game = {
             score: 0,
@@ -252,7 +297,8 @@
             maxParticles: 300,
             mouseX: 0,
             mouseY: 0,
-            showReticle: false
+            showReticle: false,
+            isMobile: isMobile
         };
 
         // Color palettes for viruses
@@ -556,7 +602,11 @@
                 this.x = x;
                 this.y = y;
                 this.radius = 0;
-                this.maxRadius = isKing ? 400 : 200;
+
+                // Reduce radius by half on mobile devices
+                const radiusMultiplier = game.isMobile ? 0.5 : 1;
+                this.maxRadius = isKing ? 400 * radiusMultiplier : 200 * radiusMultiplier;
+
                 this.growing = true;
                 this.life = 1;
                 this.isKing = isKing;
@@ -576,6 +626,11 @@
             }
 
             draw() {
+                // Validate coordinates before drawing
+                if (isNaN(this.x) || isNaN(this.y) || isNaN(this.radius) || this.radius <= 0) {
+                    return;
+                }
+
                 ctx.save();
 
                 // Outer glow
@@ -814,10 +869,48 @@
 
         // Handle mouse move for reticle
         function handleMouseMove(e) {
+            e.preventDefault();
             const rect = canvas.getBoundingClientRect();
-            game.mouseX = (e.clientX || e.touches?.[0]?.clientX) - rect.left;
-            game.mouseY = (e.clientY || e.touches?.[0]?.clientY) - rect.top;
-            game.showReticle = true;
+            const touch = e.touches?.[0];
+            const x = (touch?.clientX || e.clientX);
+            const y = (touch?.clientY || e.clientY);
+
+            // Validate coordinates
+            if (typeof x === 'number' && typeof y === 'number' && !isNaN(x) && !isNaN(y)) {
+                game.mouseX = x - rect.left;
+                game.mouseY = y - rect.top;
+                game.showReticle = true;
+            }
+        }
+
+        // Handle touch start (show reticle immediately)
+        function handleTouchStart(e) {
+            e.preventDefault();
+            const rect = canvas.getBoundingClientRect();
+            const touch = e.touches?.[0];
+
+            if (touch) {
+                const x = touch.clientX;
+                const y = touch.clientY;
+
+                // Validate coordinates
+                if (typeof x === 'number' && typeof y === 'number' && !isNaN(x) && !isNaN(y)) {
+                    game.mouseX = x - rect.left;
+                    game.mouseY = y - rect.top;
+                    game.showReticle = true;
+                }
+            }
+        }
+
+        // Handle touch end (keep reticle visible for a moment)
+        function handleTouchEnd(e) {
+            e.preventDefault();
+            // Keep reticle visible briefly after touch
+            setTimeout(() => {
+                if (!e.touches || e.touches.length === 0) {
+                    game.showReticle = false;
+                }
+            }, 100);
         }
 
         // Handle mouse leave
@@ -831,8 +924,24 @@
 
             e.preventDefault();
             const rect = canvas.getBoundingClientRect();
-            const x = (e.clientX || e.touches?.[0]?.clientX) - rect.left;
-            const y = (e.clientY || e.touches?.[0]?.clientY) - rect.top;
+            const touch = e.touches?.[0] || e.changedTouches?.[0];
+            const clientX = touch?.clientX || e.clientX;
+            const clientY = touch?.clientY || e.clientY;
+
+            // Validate coordinates before using them
+            if (typeof clientX !== 'number' || typeof clientY !== 'number' ||
+                isNaN(clientX) || isNaN(clientY)) {
+                console.error('Invalid click coordinates');
+                return;
+            }
+
+            const x = clientX - rect.left;
+            const y = clientY - rect.top;
+
+            // Update cursor position for touch devices
+            game.mouseX = x;
+            game.mouseY = y;
+            game.showReticle = true;
 
             // Hide info on first shot
             if (game.shotsRemaining === 3) {
@@ -903,8 +1012,8 @@
 
             ctx.save();
 
-            // Outer circle (sanitization zone preview)
-            const zoneRadius = 200;
+            // Outer circle (sanitization zone preview) - adjusted for mobile
+            const zoneRadius = game.isMobile ? 100 : 200;
             ctx.strokeStyle = 'rgba(0, 255, 255, 0.3)';
             ctx.lineWidth = 2;
             ctx.setLineDash([5, 5]);
@@ -1075,10 +1184,29 @@
 
         // Event listeners
         canvas.addEventListener('click', handleClick);
-        canvas.addEventListener('touchstart', handleClick);
         canvas.addEventListener('mousemove', handleMouseMove);
-        canvas.addEventListener('touchmove', handleMouseMove);
         canvas.addEventListener('mouseleave', handleMouseLeave);
+
+        // Touch events (mobile support)
+        canvas.addEventListener('touchstart', handleTouchStart, { passive: false });
+        canvas.addEventListener('touchmove', handleMouseMove, { passive: false });
+        canvas.addEventListener('touchend', handleTouchEnd, { passive: false });
+
+        // Tap to shoot on mobile (with debounce to prevent double-firing)
+        let lastTouchEnd = 0;
+        canvas.addEventListener('touchend', (e) => {
+            const now = Date.now();
+            if (now - lastTouchEnd < 300) {
+                // Prevent rapid double-taps
+                e.preventDefault();
+                return;
+            }
+            lastTouchEnd = now;
+
+            if (e.changedTouches && e.changedTouches.length > 0) {
+                handleClick(e);
+            }
+        }, { passive: false });
 
         // Start game
         initLevel();
