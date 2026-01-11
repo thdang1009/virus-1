@@ -1289,6 +1289,7 @@
                 this.isKing = isKing;
                 this.growthRate = isKing ? 8 : 6;
                 this.isPlayerCreated = isPlayerCreated; // Track if player directly created this zone
+                this.hitViruses = new Set(); // Track which viruses have already been hit by this zone
             }
 
             update() {
@@ -2178,12 +2179,25 @@
                 // Check collisions with viruses
                 if (zone.growing) {
                     game.viruses.forEach(virus => {
+                        // Skip if this virus has already been hit by this zone
+                        if (zone.hitViruses.has(virus)) {
+                            return;
+                        }
+
                         // Helper virus is ONLY affected by player-created zones, not chain reactions
                         if (virus.virusType === virusTypes.HELPER && !zone.isPlayerCreated) {
                             return; // Skip Helper for chain reaction zones
                         }
 
+                        // Boss virus is ONLY affected by player-created zones, not chain reactions
+                        if (virus.virusType === virusTypes.BOSS && !zone.isPlayerCreated) {
+                            return; // Skip Boss for chain reaction zones - must be killed directly!
+                        }
+
                         if (zone.checkCollision(virus)) {
+                            // Mark this virus as hit by this zone
+                            zone.hitViruses.add(virus);
+
                             const damageResult = virus.takeDamage();
 
                             if (damageResult.killed) {
