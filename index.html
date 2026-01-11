@@ -345,6 +345,231 @@
                 font-size: 22px;
             }
         }
+
+        /* Achievement System Styles */
+        #achievementButton {
+            position: absolute;
+            top: 100px;
+            right: 30px;
+            font-size: 32px;
+            background: rgba(0, 0, 0, 0.7);
+            border: 2px solid #ffd700;
+            border-radius: 10px;
+            padding: 10px 15px;
+            cursor: pointer;
+            transition: all 0.3s;
+            box-shadow: 0 0 20px rgba(255, 215, 0, 0.5);
+            pointer-events: auto;
+            z-index: 20;
+        }
+
+        #achievementButton:hover {
+            transform: scale(1.1);
+            box-shadow: 0 0 30px rgba(255, 215, 0, 0.8);
+        }
+
+        @media (max-width: 768px) {
+            #achievementButton {
+                top: 80px;
+                right: 15px;
+                font-size: 24px;
+                padding: 8px 12px;
+            }
+        }
+
+        /* Toast Notification */
+        .achievement-toast {
+            position: fixed;
+            top: 20px;
+            left: 50%;
+            transform: translateX(-50%) translateY(-100px);
+            background: linear-gradient(135deg, #001d3d 0%, #000814 100%);
+            border: 3px solid #ffd700;
+            border-radius: 10px;
+            padding: 15px 25px;
+            font-family: 'Courier New', monospace;
+            font-size: 18px;
+            font-weight: bold;
+            color: #ffd700;
+            text-shadow: 0 0 10px #ffd700;
+            box-shadow: 0 0 30px rgba(255, 215, 0, 0.7);
+            z-index: 10000;
+            opacity: 0;
+            transition: all 0.5s ease-out;
+            pointer-events: none;
+        }
+
+        .achievement-toast.show {
+            transform: translateX(-50%) translateY(0);
+            opacity: 1;
+        }
+
+        @media (max-width: 768px) {
+            .achievement-toast {
+                font-size: 14px;
+                padding: 12px 20px;
+            }
+        }
+
+        /* Achievement Modal */
+        #achievementModal {
+            display: none;
+            position: fixed;
+            top: 0;
+            left: 0;
+            width: 100%;
+            height: 100%;
+            background: rgba(0, 0, 0, 0.9);
+            z-index: 1000;
+            justify-content: center;
+            align-items: center;
+            overflow-y: auto;
+        }
+
+        #achievementModal.show {
+            display: flex;
+        }
+
+        .achievement-content {
+            background: linear-gradient(135deg, #001d3d 0%, #000814 100%);
+            border: 3px solid #00ffff;
+            border-radius: 15px;
+            padding: 40px;
+            max-width: 600px;
+            width: 90%;
+            max-height: 85vh;
+            overflow-y: auto;
+            box-shadow: 0 0 50px rgba(0, 255, 255, 0.5);
+        }
+
+        .achievement-title {
+            color: #ffd700;
+            font-size: 36px;
+            font-weight: bold;
+            text-align: center;
+            margin-bottom: 30px;
+            text-shadow: 0 0 20px #ffd700;
+        }
+
+        .achievement-list {
+            margin-bottom: 30px;
+        }
+
+        .achievement-item {
+            display: flex;
+            align-items: center;
+            padding: 15px;
+            margin: 10px 0;
+            background: rgba(0, 255, 255, 0.1);
+            border-left: 4px solid;
+            border-radius: 5px;
+            transition: all 0.3s;
+        }
+
+        .achievement-item.locked {
+            filter: grayscale(100%);
+            opacity: 0.5;
+        }
+
+        .achievement-item.unlocked {
+            box-shadow: 0 0 15px;
+        }
+
+        .achievement-item.bronze {
+            border-left-color: #cd7f32;
+        }
+
+        .achievement-item.silver {
+            border-left-color: #c0c0c0;
+        }
+
+        .achievement-item.gold {
+            border-left-color: #ffd700;
+        }
+
+        .achievement-item.unlocked.bronze {
+            box-shadow: 0 0 15px rgba(205, 127, 50, 0.6);
+        }
+
+        .achievement-item.unlocked.silver {
+            box-shadow: 0 0 15px rgba(192, 192, 192, 0.6);
+        }
+
+        .achievement-item.unlocked.gold {
+            box-shadow: 0 0 15px rgba(255, 215, 0, 0.6);
+        }
+
+        .achievement-icon {
+            font-size: 32px;
+            margin-right: 15px;
+            min-width: 40px;
+            text-align: center;
+        }
+
+        .achievement-details {
+            flex: 1;
+        }
+
+        .achievement-name {
+            color: #fff;
+            font-size: 18px;
+            font-weight: bold;
+            margin-bottom: 5px;
+            text-shadow: 0 0 5px #fff;
+        }
+
+        .achievement-desc {
+            color: #00d9ff;
+            font-size: 14px;
+        }
+
+        .achievement-close {
+            background: #ff0066;
+            color: #fff;
+            border: none;
+            padding: 15px 40px;
+            font-size: 20px;
+            font-family: 'Courier New', monospace;
+            font-weight: bold;
+            cursor: pointer;
+            border-radius: 5px;
+            width: 100%;
+            transition: all 0.3s;
+            text-shadow: 0 0 10px #ff0066;
+            box-shadow: 0 0 20px rgba(255, 0, 102, 0.5);
+            pointer-events: auto;
+        }
+
+        .achievement-close:hover {
+            background: #ff3385;
+            transform: scale(1.05);
+        }
+
+        @media (max-width: 768px) {
+            .achievement-content {
+                padding: 30px 20px;
+            }
+
+            .achievement-title {
+                font-size: 28px;
+            }
+
+            .achievement-item {
+                padding: 12px;
+            }
+
+            .achievement-icon {
+                font-size: 24px;
+            }
+
+            .achievement-name {
+                font-size: 16px;
+            }
+
+            .achievement-desc {
+                font-size: 12px;
+            }
+        }
     </style>
 </head>
 <body>
@@ -359,7 +584,11 @@
         <div id="message"></div>
         <div id="location"></div>
         <div id="info">CLICK TO DEPLOY SANITIZATION ZONE<br>Target: 70% Viral Elimination</div>
+        <button id="achievementButton" onclick="openAchievements()">🏆</button>
     </div>
+
+    <!-- Achievement Toast Notification -->
+    <div id="achievementToast" class="achievement-toast"></div>
 
     <!-- Leaderboard Modal -->
     <div id="leaderboardModal">
@@ -369,6 +598,17 @@
                 <!-- Will be populated by JavaScript -->
             </div>
             <button class="leaderboard-close" onclick="closeLeaderboard()">CONTINUE</button>
+        </div>
+    </div>
+
+    <!-- Achievement Modal -->
+    <div id="achievementModal">
+        <div class="achievement-content">
+            <div class="achievement-title">🏆 ACHIEVEMENTS 🏆</div>
+            <div class="achievement-list" id="achievementList">
+                <!-- Will be populated by JavaScript -->
+            </div>
+            <button class="achievement-close" onclick="closeAchievements()">CLOSE</button>
         </div>
     </div>
 
@@ -416,6 +656,80 @@
         const isMobile = /iPhone|iPad|iPod|Android/i.test(navigator.userAgent) ||
                         (window.matchMedia && window.matchMedia("(max-width: 768px)").matches);
 
+        // Achievement System
+        const achievements = [
+            {
+                id: "first_blood",
+                tier: "bronze",
+                title: "Sanitizer Initiate",
+                description: "Clear your first contaminated location.",
+                condition: "level > 1"
+            },
+            {
+                id: "clean_sweep",
+                tier: "silver",
+                title: "Sterile Perfection",
+                description: "Eliminate 100% of viruses in a single level.",
+                condition: "last_level_sanitized == 100"
+            },
+            {
+                id: "sniper",
+                tier: "gold",
+                title: "One Shot, One Kill",
+                description: "Clear a level using only 1 shot.",
+                condition: "shots_used == 1 && level_won == true"
+            },
+            {
+                id: "pacifist_victory",
+                tier: "gold",
+                title: "Angel's Work",
+                description: "Win a level with 0 shots used (Let the Helper do the work).",
+                condition: "shots_used == 0 && level_won == true"
+            },
+            {
+                id: "speed_demon",
+                tier: "silver",
+                title: "Flash Sterilization",
+                description: "Complete a level in under 5 seconds.",
+                condition: "level_time < 5"
+            },
+            {
+                id: "giant_slayer",
+                tier: "silver",
+                title: "Regicide",
+                description: "Destroy a King Virus and a Boss in the same level.",
+                condition: "king_killed > 0 && boss_killed == true"
+            },
+            {
+                id: "chain_master",
+                tier: "gold",
+                title: "Nuclear Reaction",
+                description: "Trigger a chain reaction of 50 or more viruses.",
+                condition: "max_chain >= 50"
+            },
+            {
+                id: "close_call",
+                tier: "bronze",
+                title: "Living on the Edge",
+                description: "Clear a level with exactly 70% (The bare minimum).",
+                condition: "sanitized_percent == 70"
+            },
+            {
+                id: "heartbreaker",
+                tier: "bronze",
+                title: "Unfriendly Fire",
+                description: "Accidentally kill the Helper Virus (and survive the doubling).",
+                condition: "helper_killed == true && level_won == true"
+            },
+            {
+                id: "untouchable",
+                tier: "gold",
+                title: "Bio-Security Expert",
+                description: "Reach Level 10 without losing a single time.",
+                condition: "level == 10 && total_losses == 0"
+            }
+        ];
+
         // Game state
         const game = {
             score: 0,
@@ -448,7 +762,13 @@
             // Special viruses
             hasHelper: false,
             hasBoss: false,
-            bossKilled: false
+            bossKilled: false,
+            // Achievement tracking (per level)
+            levelStartTime: 0,
+            shotsUsed: 0,
+            kingKilledThisLevel: 0,
+            helperKilledThisLevel: false,
+            maxChainThisLevel: 0
         };
 
         // Virus types with special abilities
@@ -1230,6 +1550,145 @@
             // Don't automatically resume - let player click to continue
         }
 
+        // Achievement Functions
+        function initAchievements() {
+            const achievementData = localStorage.getItem('virusAchievements');
+            if (!achievementData) {
+                // Initialize empty achievement tracking
+                localStorage.setItem('virusAchievements', JSON.stringify([]));
+            }
+        }
+
+        function getUnlockedAchievements() {
+            const data = localStorage.getItem('virusAchievements');
+            if (data) {
+                try {
+                    return JSON.parse(data);
+                } catch (e) {
+                    console.error('Failed to load achievements:', e);
+                    return [];
+                }
+            }
+            return [];
+        }
+
+        function isAchievementUnlocked(achievementId) {
+            const unlocked = getUnlockedAchievements();
+            return unlocked.includes(achievementId);
+        }
+
+        function unlockAchievement(achievementId) {
+            if (isAchievementUnlocked(achievementId)) {
+                return false; // Already unlocked
+            }
+
+            const unlocked = getUnlockedAchievements();
+            unlocked.push(achievementId);
+            localStorage.setItem('virusAchievements', JSON.stringify(unlocked));
+
+            // Find achievement details
+            const achievement = achievements.find(a => a.id === achievementId);
+            if (achievement) {
+                showAchievementToast(achievement);
+                playSound(600, 0.3, 'triangle', 0.3);
+                setTimeout(() => playSound(800, 0.3, 'triangle', 0.3), 100);
+            }
+
+            return true;
+        }
+
+        function showAchievementToast(achievement) {
+            const toast = document.getElementById('achievementToast');
+            toast.innerHTML = `🏆 Achievement Unlocked: ${achievement.title}`;
+            toast.classList.add('show');
+
+            setTimeout(() => {
+                toast.classList.remove('show');
+            }, 4000);
+        }
+
+        function openAchievements() {
+            const modal = document.getElementById('achievementModal');
+            const achievementList = document.getElementById('achievementList');
+            const unlocked = getUnlockedAchievements();
+
+            let html = '';
+            achievements.forEach(achievement => {
+                const isUnlocked = unlocked.includes(achievement.id);
+                const lockClass = isUnlocked ? 'unlocked' : 'locked';
+                const icon = isUnlocked ? '🏆' : '🔒';
+
+                html += `
+                    <div class="achievement-item ${achievement.tier} ${lockClass}">
+                        <div class="achievement-icon">${icon}</div>
+                        <div class="achievement-details">
+                            <div class="achievement-name">${achievement.title}</div>
+                            <div class="achievement-desc">${achievement.description}</div>
+                        </div>
+                    </div>
+                `;
+            });
+
+            achievementList.innerHTML = html;
+            modal.classList.add('show');
+            game.isPlaying = false; // Pause game
+        }
+
+        function closeAchievements() {
+            const modal = document.getElementById('achievementModal');
+            modal.classList.remove('show');
+            game.isPlaying = true; // Resume game
+        }
+
+        function checkAchievements(context) {
+            // Context contains: level, shots_used, level_won, sanitized_percent, level_time, etc.
+            achievements.forEach(achievement => {
+                if (isAchievementUnlocked(achievement.id)) {
+                    return; // Skip if already unlocked
+                }
+
+                let shouldUnlock = false;
+
+                // Check each achievement condition
+                switch (achievement.id) {
+                    case 'first_blood':
+                        shouldUnlock = context.level > 1;
+                        break;
+                    case 'clean_sweep':
+                        shouldUnlock = context.sanitized_percent === 100 && context.level_won;
+                        break;
+                    case 'sniper':
+                        shouldUnlock = context.shots_used === 1 && context.level_won;
+                        break;
+                    case 'pacifist_victory':
+                        shouldUnlock = context.shots_used === 0 && context.level_won;
+                        break;
+                    case 'speed_demon':
+                        shouldUnlock = context.level_time < 5 && context.level_won;
+                        break;
+                    case 'giant_slayer':
+                        shouldUnlock = context.king_killed > 0 && context.boss_killed && context.level_won;
+                        break;
+                    case 'chain_master':
+                        shouldUnlock = context.max_chain >= 50;
+                        break;
+                    case 'close_call':
+                        shouldUnlock = context.sanitized_percent === 70 && context.level_won;
+                        break;
+                    case 'heartbreaker':
+                        shouldUnlock = context.helper_killed && context.level_won;
+                        break;
+                    case 'untouchable':
+                        shouldUnlock = context.level === 10 && context.total_losses === 0;
+                        break;
+                }
+
+                if (shouldUnlock) {
+                    unlockAchievement(achievement.id);
+                }
+            });
+        }
+
         // Screen shake
         function shake(intensity = 1) {
             canvas.style.transform = `translate(${(Math.random() - 0.5) * 10 * intensity}px, ${(Math.random() - 0.5) * 10 * intensity}px)`;
@@ -1303,6 +1762,13 @@
             game.comboMultiplier = 1;
             game.lastKillTime = 0;
             game.bossKilled = false;
+
+            // Achievement tracking - reset per level
+            game.levelStartTime = Date.now();
+            game.shotsUsed = 0;
+            game.kingKilledThisLevel = 0;
+            game.helperKilledThisLevel = false;
+            game.maxChainThisLevel = 0;
 
             // Check for special level types
             game.hasHelper = (game.level % 3 === 0); // Helper at 3, 6, 9, etc.
@@ -1457,6 +1923,7 @@
             // Create sanitization zone (player-created)
             game.sanitizationZones.push(new SanitizationZone(x, y, false, true));
             game.shotsRemaining--;
+            game.shotsUsed++; // Track shots used for achievements
             playSanitizationSound();
             createParticles(x, y, 30, '#00ffff');
             updateUI();
@@ -1518,6 +1985,23 @@
                 if (game.hasBoss && game.bossKilled) {
                     game.score += 100; // Boss kill bonus
                 }
+
+                // Calculate level completion time
+                const levelTime = (Date.now() - game.levelStartTime) / 1000; // in seconds
+
+                // Check achievements for this level win
+                checkAchievements({
+                    level: game.level + 1, // Next level we're advancing to
+                    shots_used: game.shotsUsed,
+                    level_won: true,
+                    sanitized_percent: Math.floor(percentSanitized),
+                    level_time: levelTime,
+                    king_killed: game.kingKilledThisLevel,
+                    boss_killed: game.bossKilled,
+                    max_chain: game.maxChainThisLevel,
+                    helper_killed: game.helperKilledThisLevel,
+                    total_losses: game.totalLosses
+                });
 
                 game.level++;
                 // Note: totalLosses is NEVER reset
@@ -1740,6 +2224,7 @@
                                     // Helper doesn't count as sanitized
                                     game.sanitizedViruses--;
                                     game.chainCount--;
+                                    game.helperKilledThisLevel = true; // Track for achievement
 
                                     showMessage('⚠️ HELPER KILLED! ⚠️<br><span style="font-size: 24px; color: #ff0066">ALL VIRUSES DOUBLED!</span>', 2000);
                                     shake(3);
@@ -1766,9 +2251,17 @@
                                 }
 
                                 const isKing = virus.isKing;
+                                if (isKing) {
+                                    game.kingKilledThisLevel++; // Track king kills for achievements
+                                }
                                 const basePoints = isKing ? 25 : 5;
                                 const points = Math.floor(basePoints * game.comboMultiplier);
                                 game.score += points;
+
+                                // Track max chain for achievements
+                                if (game.chainCount > game.maxChainThisLevel) {
+                                    game.maxChainThisLevel = game.chainCount;
+                                }
 
                                 // Create new sanitization zone (chain reaction - NOT player created)
                                 game.sanitizationZones.push(new SanitizationZone(virus.x, virus.y, isKing, false));
@@ -1950,6 +2443,7 @@
 
         // Initialize and start game
         initLeaderboard(); // Initialize leaderboard with defaults
+        initAchievements(); // Initialize achievement system
         loadGame(); // Load saved progress
         updateUI(); // Update UI with loaded data
         initLevel();
