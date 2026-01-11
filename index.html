@@ -162,11 +162,11 @@
             bottom: 30px;
             left: 50%;
             transform: translateX(-50%);
-            color: #0af;
+            color: #fff;
             font-size: 18px;
             text-align: center;
             transition: opacity 0.3s;
-            text-shadow: 0 0 10px #0af;
+            text-shadow: 0 0 10px #fff;
         }
 
         #location {
@@ -229,10 +229,10 @@
         <div id="score">SCORE: 0</div>
         <div id="level">LEVEL: 1</div>
         <div id="stats">CHAIN: 0x | SANITIZED: 0/0</div>
-        <div id="shots">SHOTS: 3</div>
+        <div id="shots">SHOTS: 5</div>
         <div id="message"></div>
         <div id="location"></div>
-        <div id="info">CLICK TO DEPLOY SANITIZATION ZONE<br>Target: 50% Viral Elimination</div>
+        <div id="info">CLICK TO DEPLOY SANITIZATION ZONE<br>Target: 70% Viral Elimination</div>
     </div>
 
     <script>
@@ -289,7 +289,7 @@
             floatingTexts: [],
             isPlaying: false,
             levelCompleting: false,
-            shotsRemaining: 3,
+            shotsRemaining: 5,
             totalViruses: 0,
             sanitizedViruses: 0,
             chainCount: 0,
@@ -391,7 +391,7 @@
                 }
 
                 // Brownian motion parameters with level scaling and type modifiers
-                const baseSpeed = 1;
+                const baseSpeed = 1.5;
                 const panicSpeedMultiplier = 1 + (game.level - 1) * 0.05 || 1;
 
                 // Speed multipliers per type
@@ -470,7 +470,7 @@
                         // PANIC MODE: Flee from cursor
                         this.isPanicked = true;
                         const fleeAngle = Math.atan2(dy, dx) + Math.PI; // Opposite direction
-                        const fleeSpeed = this.baseSpeed * 1.15;
+                        const fleeSpeed = this.baseSpeed * 1.35;
 
                         this.targetVX = Math.cos(fleeAngle) * fleeSpeed;
                         this.targetVY = Math.sin(fleeAngle) * fleeSpeed;
@@ -963,7 +963,7 @@
             game.sanitizationZones = [];
             game.particles = [];
             game.floatingTexts = [];
-            game.shotsRemaining = 3;
+            game.shotsRemaining = 5;
             game.sanitizedViruses = 0;
             game.chainCount = 0;
             game.levelCompleting = false;
@@ -1091,7 +1091,7 @@
             game.showReticle = true;
 
             // Hide info on first shot
-            if (game.shotsRemaining === 3) {
+            if (game.shotsRemaining === 5) {
                 ui.info.style.opacity = '0';
             }
 
@@ -1112,7 +1112,7 @@
 
             const percentSanitized = (game.sanitizedViruses / game.totalViruses) * 100;
 
-            if (percentSanitized >= 50) {
+            if (percentSanitized >= 70) {
                 // Success!
                 const bonus = Math.floor(percentSanitized * 15) * game.level;
                 game.score += bonus;
