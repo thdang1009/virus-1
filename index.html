@@ -219,6 +219,132 @@
                 transform: translateY(-60px) scale(1.5);
             }
         }
+
+        /* Leaderboard Modal */
+        #leaderboardModal {
+            display: none;
+            position: fixed;
+            top: 0;
+            left: 0;
+            width: 100%;
+            height: 100%;
+            background: rgba(0, 0, 0, 0.9);
+            z-index: 1000;
+            justify-content: center;
+            align-items: center;
+        }
+
+        #leaderboardModal.show {
+            display: flex;
+        }
+
+        .leaderboard-content {
+            background: linear-gradient(135deg, #001d3d 0%, #000814 100%);
+            border: 3px solid #00ffff;
+            border-radius: 15px;
+            padding: 40px;
+            max-width: 500px;
+            width: 90%;
+            box-shadow: 0 0 50px rgba(0, 255, 255, 0.5);
+        }
+
+        .leaderboard-title {
+            color: #00ffff;
+            font-size: 36px;
+            font-weight: bold;
+            text-align: center;
+            margin-bottom: 30px;
+            text-shadow: 0 0 20px #00ffff;
+        }
+
+        .leaderboard-list {
+            margin-bottom: 30px;
+        }
+
+        .leaderboard-item {
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            padding: 15px 20px;
+            margin: 10px 0;
+            background: rgba(0, 255, 255, 0.1);
+            border-left: 4px solid;
+            color: #fff;
+            font-size: 20px;
+            text-shadow: 0 0 5px currentColor;
+        }
+
+        .leaderboard-item.rank-1 {
+            border-left-color: #ffd700;
+            background: rgba(255, 215, 0, 0.15);
+        }
+
+        .leaderboard-item.rank-2 {
+            border-left-color: #c0c0c0;
+            background: rgba(192, 192, 192, 0.15);
+        }
+
+        .leaderboard-item.rank-3 {
+            border-left-color: #cd7f32;
+            background: rgba(205, 127, 50, 0.15);
+        }
+
+        .leaderboard-rank {
+            font-size: 28px;
+            font-weight: bold;
+            min-width: 40px;
+        }
+
+        .leaderboard-name {
+            flex: 1;
+            margin-left: 20px;
+        }
+
+        .leaderboard-level {
+            color: #00ff88;
+            font-weight: bold;
+        }
+
+        .leaderboard-close {
+            background: #ff0066;
+            color: #fff;
+            border: none;
+            padding: 15px 40px;
+            font-size: 20px;
+            font-family: 'Courier New', monospace;
+            font-weight: bold;
+            cursor: pointer;
+            border-radius: 5px;
+            width: 100%;
+            transition: all 0.3s;
+            text-shadow: 0 0 10px #ff0066;
+            box-shadow: 0 0 20px rgba(255, 0, 102, 0.5);
+            pointer-events: auto;
+        }
+
+        .leaderboard-close:hover {
+            background: #ff3385;
+            transform: scale(1.05);
+        }
+
+        @media (max-width: 768px) {
+            .leaderboard-content {
+                padding: 30px 20px;
+            }
+
+            .leaderboard-title {
+                font-size: 28px;
+            }
+
+            .leaderboard-item {
+                font-size: 16px;
+                padding: 12px 15px;
+            }
+
+            .leaderboard-rank {
+                font-size: 22px;
+            }
+        }
     </style>
 </head>
 <body>
@@ -233,6 +359,17 @@
         <div id="message"></div>
         <div id="location"></div>
         <div id="info">CLICK TO DEPLOY SANITIZATION ZONE<br>Target: 70% Viral Elimination</div>
+    </div>
+
+    <!-- Leaderboard Modal -->
+    <div id="leaderboardModal">
+        <div class="leaderboard-content">
+            <div class="leaderboard-title">🏆 LEADERBOARD 🏆</div>
+            <div class="leaderboard-list" id="leaderboardList">
+                <!-- Will be populated by JavaScript -->
+            </div>
+            <button class="leaderboard-close" onclick="closeLeaderboard()">CONTINUE</button>
+        </div>
     </div>
 
     <script>
@@ -304,16 +441,25 @@
             comboMultiplier: 1,
             comboTimer: 0,
             lastKillTime: 0,
-            comboDecayTime: 2000 // 2 seconds to maintain combo
+            comboDecayTime: 2000, // 2 seconds to maintain combo
+            // Progression tracking
+            totalLosses: 0,
+            highestLevel: 1,
+            // Special viruses
+            hasHelper: false,
+            hasBoss: false,
+            bossKilled: false
         };
 
         // Virus types with special abilities
         const virusTypes = {
             NORMAL: 'normal',
-            KAMIKAZE: 'kamikaze',   // IMMUNE to sanitization zones - must be caught by chain reaction from other viruses
+            KAMIKAZE: 'kamikaze',   // Fearless - immune to flee behavior
             SPLITTER: 'splitter',   // Splits into 2 when killed
             TANK: 'tank',           // Requires 2 hits
-            SPEED: 'speed'          // Moves 3x faster
+            SPEED: 'speed',         // Moves 3x faster
+            HELPER: 'helper',       // White angel - helps kill viruses, BUT if killed all viruses double!
+            BOSS: 'boss'            // Dark boss - 3 stages, must be killed to win
         };
 
         // Color palettes for virus types
@@ -326,7 +472,9 @@
             kamikaze: { primary: '#ff0000', secondary: '#8b0000', name: 'Kamikaze Red' },
             splitter: { primary: '#ff8c00', secondary: '#cc6600', name: 'Splitter Orange' },
             tank: { primary: '#9932cc', secondary: '#6a0dad', name: 'Tank Purple' },
-            speed: { primary: '#ffff00', secondary: '#cccc00', name: 'Speed Yellow' }
+            speed: { primary: '#ffff00', secondary: '#cccc00', name: 'Speed Yellow' },
+            helper: { primary: '#ffffff', secondary: '#e0e0e0', name: 'Helper White' },
+            boss: { primary: '#2a2a2a', secondary: '#000000', name: 'Boss Dark' }
         };
 
         // Virus class with procedural generation and special types
@@ -345,6 +493,12 @@
                 if (virusType === virusTypes.TANK) {
                     sizeMultiplier = 1.3; // Tanks are bigger
                 }
+                if (virusType === virusTypes.HELPER) {
+                    sizeMultiplier = 1.2; // Helper is slightly bigger
+                }
+                if (virusType === virusTypes.BOSS) {
+                    sizeMultiplier = 2.5; // Boss starts HUGE (35px)
+                }
 
                 this.baseRadius = isKing ? 25 : 12 * sizeMultiplier;
                 this.radius = this.baseRadius;
@@ -354,8 +508,13 @@
                 this.deathProgress = 0;
 
                 // Special type properties
-                this.hits = (virusType === virusTypes.TANK) ? 2 : 1;
+                this.hits = (virusType === virusTypes.TANK) ? 2 : (virusType === virusTypes.BOSS) ? 3 : 1;
                 this.maxHits = this.hits;
+
+                // Boss stages
+                if (virusType === virusTypes.BOSS) {
+                    this.bossStage = 1; // Stages: 1, 2, 3
+                }
 
                 // Procedural personality
                 if (isKing) {
@@ -402,6 +561,11 @@
                     typeSpeedMultiplier = 0.5;
                 } else if (virusType === virusTypes.KAMIKAZE) {
                     typeSpeedMultiplier = 1.5;
+                } else if (virusType === virusTypes.HELPER) {
+                    typeSpeedMultiplier = 0.8; // Helper moves slower
+                } else if (virusType === virusTypes.BOSS) {
+                    // Boss speed increases with stage
+                    typeSpeedMultiplier = 1;
                 }
 
                 this.baseSpeed = baseSpeed * panicSpeedMultiplier * typeSpeedMultiplier;
@@ -449,9 +613,9 @@
                     return;
                 }
 
-                // Kamikaze viruses IGNORE everything - just pure Brownian motion
-                if (this.virusType === virusTypes.KAMIKAZE) {
-                    // Kamikaze viruses are fearless - they don't react to cursor or zones
+                // Kamikaze and Helper viruses IGNORE cursor - just pure Brownian motion
+                if (this.virusType === virusTypes.KAMIKAZE || this.virusType === virusTypes.HELPER) {
+                    // These viruses are fearless/independent - they don't react to cursor
                     this.isPanicked = false;
 
                     // Normal Brownian motion only
@@ -665,6 +829,49 @@
                         ctx.textAlign = 'center';
                         ctx.fillText('⚡', 0, currentRadius + 15);
                     }
+
+                    // Helper virus - angel/heart symbol with glow
+                    if (this.virusType === virusTypes.HELPER) {
+                        ctx.fillStyle = '#fff';
+                        ctx.font = 'bold 20px Arial';
+                        ctx.textAlign = 'center';
+                        ctx.fillText('🤍', 0, currentRadius + 20);
+
+                        // Pulsing white aura
+                        const auraPulse = Math.sin(game.time * 0.08) * 0.3 + 0.7;
+                        ctx.strokeStyle = `rgba(255, 255, 255, ${auraPulse})`;
+                        ctx.lineWidth = 3;
+                        ctx.beginPath();
+                        ctx.arc(0, 0, currentRadius + 8, 0, Math.PI * 2);
+                        ctx.stroke();
+                    }
+
+                    // Boss virus - skull/demon symbol and health bar
+                    if (this.virusType === virusTypes.BOSS) {
+                        ctx.fillStyle = '#ff0000';
+                        ctx.font = 'bold 24px Arial';
+                        ctx.textAlign = 'center';
+                        ctx.fillText('👿', 0, currentRadius + 25);
+
+                        // Health bar
+                        const barWidth = currentRadius * 2;
+                        const barHeight = 6;
+                        const barX = -barWidth / 2;
+                        const barY = currentRadius + 30;
+
+                        ctx.fillStyle = 'rgba(0, 0, 0, 0.7)';
+                        ctx.fillRect(barX, barY, barWidth, barHeight);
+
+                        const healthPercent = this.hits / this.maxHits;
+                        const barColor = healthPercent > 0.66 ? '#ff0000' : healthPercent > 0.33 ? '#ff6600' : '#ffaa00';
+                        ctx.fillStyle = barColor;
+                        ctx.fillRect(barX, barY, barWidth * healthPercent, barHeight);
+
+                        // Stage indicator
+                        ctx.fillStyle = '#fff';
+                        ctx.font = 'bold 12px Arial';
+                        ctx.fillText(`STAGE ${this.bossStage}`, 0, currentRadius + 42);
+                    }
                 }
 
                 // Draw eyes with jitter
@@ -698,14 +905,42 @@
             }
 
             takeDamage() {
-                if (this.dying || this.destroyed) return { killed: false, shouldSplit: false };
+                if (this.dying || this.destroyed) return { killed: false, shouldSplit: false, isHelper: false, isBoss: false };
 
                 this.hits--;
+
+                // Boss stage progression
+                if (this.virusType === virusTypes.BOSS && this.hits > 0) {
+                    this.bossStage++;
+
+                    // Stage 2: 2x speed, darker
+                    if (this.bossStage === 2) {
+                        this.baseSpeed *= 2;
+                        this.targetVX *= 2;
+                        this.targetVY *= 2;
+                        this.colorScheme = { primary: '#1a1a1a', secondary: '#000000', name: 'Boss Angry' };
+                    }
+                    // Stage 3: 3x speed (cumulative = 6x), tiny size
+                    else if (this.bossStage === 3) {
+                        this.baseSpeed *= 1.5;
+                        this.targetVX *= 1.5;
+                        this.targetVY *= 1.5;
+                        this.baseRadius = this.baseRadius / 10; // Shrink to 1/10 size
+                        this.radius = this.baseRadius;
+                        this.colorScheme = { primary: '#0a0a0a', secondary: '#000000', name: 'Boss Enraged' };
+                    }
+
+                    // Flash effect
+                    this.pulsePhase += Math.PI;
+                    return { killed: false, shouldSplit: false, isHelper: false, isBoss: false };
+                }
 
                 if (this.hits <= 0) {
                     this.dying = true;
                     const shouldSplit = this.virusType === virusTypes.SPLITTER;
-                    return { killed: true, shouldSplit: shouldSplit };
+                    const isHelper = this.virusType === virusTypes.HELPER;
+                    const isBoss = this.virusType === virusTypes.BOSS;
+                    return { killed: true, shouldSplit: shouldSplit, isHelper: isHelper, isBoss: isBoss };
                 }
 
                 // Tank virus damaged but not killed - visual feedback
@@ -714,13 +949,13 @@
                     this.pulsePhase += Math.PI;
                 }
 
-                return { killed: false, shouldSplit: false };
+                return { killed: false, shouldSplit: false, isHelper: false, isBoss: false };
             }
         }
 
         // Sanitization Zone (Explosion)
         class SanitizationZone {
-            constructor(x, y, isKing = false) {
+            constructor(x, y, isKing = false, isPlayerCreated = false) {
                 this.x = x;
                 this.y = y;
                 this.radius = 0;
@@ -733,6 +968,7 @@
                 this.life = 1;
                 this.isKing = isKing;
                 this.growthRate = isKing ? 8 : 6;
+                this.isPlayerCreated = isPlayerCreated; // Track if player directly created this zone
             }
 
             update() {
@@ -899,6 +1135,101 @@
             setTimeout(() => playSound(800, 0.3, 'triangle', 0.25), 300);
         }
 
+        // Local Storage Functions
+        function saveGame() {
+            const saveData = {
+                score: game.score,
+                level: game.level,
+                highestLevel: game.highestLevel,
+                totalLosses: game.totalLosses
+            };
+            localStorage.setItem('virusGameSave', JSON.stringify(saveData));
+        }
+
+        function loadGame() {
+            const saveData = localStorage.getItem('virusGameSave');
+            if (saveData) {
+                try {
+                    const data = JSON.parse(saveData);
+                    game.score = data.score || 0;
+                    game.level = data.level || 1;
+                    game.highestLevel = data.highestLevel || 1;
+                    game.totalLosses = data.totalLosses || data.consecutiveLosses || 0; // Support old saves
+                } catch (e) {
+                    console.error('Failed to load save data:', e);
+                }
+            }
+        }
+
+        // Leaderboard Functions
+        function initLeaderboard() {
+            const leaderboardData = localStorage.getItem('virusGameLeaderboard');
+            if (!leaderboardData) {
+                // Initialize with default leaders
+                const defaultLeaders = [
+                    { name: 'Alex', level: 30 },
+                    { name: 'Ben', level: 28 },
+                    { name: 'Cook', level: 25 }
+                ];
+                localStorage.setItem('virusGameLeaderboard', JSON.stringify(defaultLeaders));
+            }
+        }
+
+        function getLeaderboard() {
+            const data = localStorage.getItem('virusGameLeaderboard');
+            if (data) {
+                try {
+                    return JSON.parse(data);
+                } catch (e) {
+                    console.error('Failed to load leaderboard:', e);
+                    return [];
+                }
+            }
+            return [];
+        }
+
+        function showLeaderboard() {
+            const leaderboard = getLeaderboard();
+            const leaderboardList = document.getElementById('leaderboardList');
+            const modal = document.getElementById('leaderboardModal');
+
+            // Add player to leaderboard for comparison
+            const allPlayers = [
+                ...leaderboard,
+                { name: 'YOU', level: game.highestLevel }
+            ];
+
+            // Sort by level (highest first)
+            allPlayers.sort((a, b) => b.level - a.level);
+
+            // Build leaderboard HTML
+            let html = '';
+            allPlayers.forEach((player, index) => {
+                const rankClass = index < 3 ? `rank-${index + 1}` : '';
+                const medal = index === 0 ? '🥇' : index === 1 ? '🥈' : index === 2 ? '🥉' : `${index + 1}.`;
+                const isYou = player.name === 'YOU';
+                const highlightStyle = isYou ? 'style="background: rgba(255, 215, 0, 0.2); border-left-color: #ffd700;"' : '';
+
+                html += `
+                    <div class="leaderboard-item ${rankClass}" ${highlightStyle}>
+                        <div class="leaderboard-rank">${medal}</div>
+                        <div class="leaderboard-name">${player.name}${isYou ? ' ⭐' : ''}</div>
+                        <div class="leaderboard-level">Level ${player.level}</div>
+                    </div>
+                `;
+            });
+
+            leaderboardList.innerHTML = html;
+            modal.classList.add('show');
+            game.isPlaying = false; // Pause game
+        }
+
+        function closeLeaderboard() {
+            const modal = document.getElementById('leaderboardModal');
+            modal.classList.remove('show');
+            // Don't automatically resume - let player click to continue
+        }
+
         // Screen shake
         function shake(intensity = 1) {
             canvas.style.transform = `translate(${(Math.random() - 0.5) * 10 * intensity}px, ${(Math.random() - 0.5) * 10 * intensity}px)`;
@@ -971,6 +1302,11 @@
             game.combo = 0;
             game.comboMultiplier = 1;
             game.lastKillTime = 0;
+            game.bossKilled = false;
+
+            // Check for special level types
+            game.hasHelper = (game.level % 3 === 0); // Helper at 3, 6, 9, etc.
+            game.hasBoss = (game.level % 5 === 0); // Boss at 5, 10, 15, etc.
 
             // Set environment background
             setLevelBackground();
@@ -1009,6 +1345,28 @@
                 }
 
                 game.viruses.push(new Virus(x, y, isKing, virusType));
+            }
+
+            // Spawn Helper virus at 3n levels
+            if (game.hasHelper) {
+                const margin = 50;
+                const x = Math.random() * (canvas.width - margin * 2) + margin;
+                const y = Math.random() * (canvas.height - margin * 2) + margin;
+                game.viruses.push(new Virus(x, y, false, virusTypes.HELPER));
+                // NOTE: Helper does NOT count towards totalViruses for win condition
+
+                showMessage('🤍 HELPER VIRUS APPEARED 🤍<br><span style="font-size: 24px;">Keep it alive! If killed, all viruses DOUBLE!</span>', 3000);
+            }
+
+            // Spawn Boss virus at 5n levels
+            if (game.hasBoss) {
+                const margin = 100;
+                const x = Math.random() * (canvas.width - margin * 2) + margin;
+                const y = Math.random() * (canvas.height - margin * 2) + margin;
+                game.viruses.push(new Virus(x, y, false, virusTypes.BOSS));
+                game.totalViruses++; // Boss counts towards total
+
+                showMessage('👿 BOSS LEVEL 👿<br><span style="font-size: 24px;">Defeat the Boss to advance!</span>', 3000);
             }
 
             game.isPlaying = true;
@@ -1096,36 +1454,94 @@
                 ui.info.style.opacity = '0';
             }
 
-            // Create sanitization zone
-            game.sanitizationZones.push(new SanitizationZone(x, y));
+            // Create sanitization zone (player-created)
+            game.sanitizationZones.push(new SanitizationZone(x, y, false, true));
             game.shotsRemaining--;
             playSanitizationSound();
             createParticles(x, y, 30, '#00ffff');
             updateUI();
         }
 
+        // Check for early win (all viruses eliminated before using all shots)
+        function checkEarlyWin() {
+            if (game.levelCompleting || game.sanitizationZones.length > 0) return;
+
+            // Count remaining non-Helper viruses
+            const remainingViruses = game.viruses.filter(v =>
+                !v.dying &&
+                !v.destroyed &&
+                v.virusType !== virusTypes.HELPER
+            ).length;
+
+            // Early win conditions
+            let shouldComplete = false;
+            if (game.hasBoss) {
+                // Boss level: boss must be killed and all other viruses eliminated
+                shouldComplete = game.bossKilled && remainingViruses === 0;
+            } else {
+                // Regular level: all non-Helper viruses eliminated
+                shouldComplete = remainingViruses === 0;
+            }
+
+            if (shouldComplete) {
+                // Trigger level complete immediately (even if shots remain)
+                checkLevelComplete(true);
+            }
+        }
+
         // Check level completion
-        function checkLevelComplete() {
-            if (game.levelCompleting || game.shotsRemaining > 0 || game.sanitizationZones.length > 0) return;
+        function checkLevelComplete(forceComplete = false) {
+            // Can complete if: forced (early win) OR no shots remaining
+            const canComplete = forceComplete || game.shotsRemaining <= 0;
+
+            if (game.levelCompleting || !canComplete || game.sanitizationZones.length > 0) return;
 
             game.levelCompleting = true;
             game.isPlaying = false;
 
             const percentSanitized = (game.sanitizedViruses / game.totalViruses) * 100;
 
-            if (percentSanitized >= 70) {
+            // Check win condition - Boss levels require boss kill, regular levels require 70%
+            let hasWon = false;
+            if (game.hasBoss) {
+                hasWon = game.bossKilled; // Must kill boss
+            } else {
+                hasWon = percentSanitized >= 70; // Regular 70% requirement
+            }
+
+            if (hasWon) {
                 // Success!
                 const bonus = Math.floor(percentSanitized * 15) * game.level;
                 game.score += bonus;
+
+                // Boss bonus
+                if (game.hasBoss && game.bossKilled) {
+                    game.score += 100; // Boss kill bonus
+                }
+
                 game.level++;
+                // Note: totalLosses is NEVER reset
+
+                // Update highest level
+                if (game.level > game.highestLevel) {
+                    game.highestLevel = game.level;
+                }
+
+                // Save progress
+                saveGame();
 
                 shake(2);
                 playLevelUpSound();
-                showMessage(
-                    `LEVEL ${game.level} PROTOCOL ACTIVATED<br>` +
-                    `<span style="font-size: 32px; color: #00ff88">${Math.floor(percentSanitized)}% SANITIZED | ${game.chainCount}x CHAIN</span>`,
-                    1200
-                );
+
+                let message = `LEVEL ${game.level} PROTOCOL ACTIVATED<br>` +
+                    `<span style="font-size: 32px; color: #00ff88">${Math.floor(percentSanitized)}% SANITIZED | ${game.chainCount}x CHAIN</span>`;
+
+                if (game.hasBoss) {
+                    message = `👿 BOSS DEFEATED! 👿<br>` +
+                        `<span style="font-size: 32px; color: #ffd700">+100 BONUS | LEVEL ${game.level}</span>`;
+                }
+
+                showMessage(message, 1200);
 
                 setTimeout(() => {
                     ui.info.style.opacity = '1';
@@ -1133,13 +1549,28 @@
                 }, 1200);
             } else {
                 // Fail
-                showMessage(
-                    `SANITIZATION FAILED<br>` +
-                    `<span style="font-size: 32px; color: #ff0066">Only ${Math.floor(percentSanitized)}% Eliminated</span>`,
-                    1200
-                );
+                game.totalLosses++; // Increment total losses (never resets)
+                game.level = Math.max(1, game.level - 1);
+
+                // Save progress
+                saveGame();
+
+                let failMessage = `SANITIZATION FAILED<br>` +
+                    `<span style="font-size: 32px; color: #ff0066">Only ${Math.floor(percentSanitized)}% Eliminated</span>`;
+
+                if (game.hasBoss && !game.bossKilled) {
+                    failMessage = `BOSS SURVIVED<br>` +
+                        `<span style="font-size: 32px; color: #ff0066">Boss must be defeated!</span>`;
+                }
+
+                showMessage(failMessage, 1200);
+
                 setTimeout(() => {
-                    game.level = Math.max(1, game.level - 1);
+                    // Check if should show leaderboard after 3 total losses
+                    if (game.totalLosses >= 3) {
+                        showLeaderboard(); // Don't reset counter - shows every loss after 3rd
+                    }
+
                     ui.info.style.opacity = '1';
                     initLevel();
                 }, 1200);
@@ -1263,6 +1694,10 @@
                 // Check collisions with viruses
                 if (zone.growing) {
                     game.viruses.forEach(virus => {
+                        // Helper virus is ONLY affected by player-created zones, not chain reactions
+                        if (virus.virusType === virusTypes.HELPER && !zone.isPlayerCreated) {
+                            return; // Skip Helper for chain reaction zones
+                        }
 
                         if (zone.checkCollision(virus)) {
                             const damageResult = virus.takeDamage();
@@ -1289,13 +1724,54 @@
                                     game.comboMultiplier = 1;
                                 }
 
+                                // Handle Boss kill
+                                if (damageResult.isBoss) {
+                                    game.bossKilled = true;
+                                    shake(4);
+                                    playSound(200, 0.8, 'sawtooth', 0.3);
+                                    createParticles(virus.x, virus.y, 80, '#000000', true);
+                                    createFloatingText(virus.x, virus.y, '+100 BOSS DEFEATED!', '#ff0000');
+                                    updateUI();
+                                    return; // Skip normal processing
+                                }
+
+                                // Handle Helper kill - DOUBLE ALL VIRUSES!
+                                if (damageResult.isHelper) {
+                                    // Helper doesn't count as sanitized
+                                    game.sanitizedViruses--;
+                                    game.chainCount--;
+
+                                    showMessage('⚠️ HELPER KILLED! ⚠️<br><span style="font-size: 24px; color: #ff0066">ALL VIRUSES DOUBLED!</span>', 2000);
+                                    shake(3);
+                                    playSound(100, 0.5, 'square', 0.3);
+
+                                    // Double all remaining viruses
+                                    const virusesToDouble = game.viruses.filter(v => !v.dying && !v.destroyed && v.virusType !== virusTypes.HELPER);
+                                    virusesToDouble.forEach(v => {
+                                        const angle = Math.random() * Math.PI * 2;
+                                        const dist = 40;
+                                        game.viruses.push(new Virus(
+                                            v.x + Math.cos(angle) * dist,
+                                            v.y + Math.sin(angle) * dist,
+                                            false,
+                                            v.virusType === virusTypes.BOSS ? virusTypes.NORMAL : v.virusType,
+                                            v.baseRadius
+                                        ));
+                                    });
+                                    game.totalViruses += virusesToDouble.length;
+
+                                    createParticles(virus.x, virus.y, 60, '#ffffff', true);
+                                    updateUI();
+                                    return; // Skip normal processing
+                                }
+
                                 const isKing = virus.isKing;
                                 const basePoints = isKing ? 25 : 5;
                                 const points = Math.floor(basePoints * game.comboMultiplier);
                                 game.score += points;
 
-                                // Create new sanitization zone
-                                game.sanitizationZones.push(new SanitizationZone(virus.x, virus.y, isKing));
+                                // Create new sanitization zone (chain reaction - NOT player created)
+                                game.sanitizationZones.push(new SanitizationZone(virus.x, virus.y, isKing, false));
 
                                 // Handle Splitter virus - spawn 2 smaller viruses
                                 if (damageResult.shouldSplit) {
@@ -1343,6 +1819,9 @@
                                 }
 
                                 updateUI();
+
+                                // Check for early win after killing viruses
+                                checkEarlyWin();
                             }
                         }
                     });
@@ -1350,6 +1829,55 @@
 
                 return alive;
             });
+
+            // Helper virus collision detection - Helper auto-kills viruses on touch
+            if (game.hasHelper) {
+                const helperVirus = game.viruses.find(v => v.virusType === virusTypes.HELPER && !v.dying && !v.destroyed);
+                if (helperVirus) {
+                    game.viruses.forEach(targetVirus => {
+                        // Skip self, dying, destroyed, and other helpers
+                        if (targetVirus === helperVirus || targetVirus.dying || targetVirus.destroyed || targetVirus.virusType === virusTypes.HELPER) {
+                            return;
+                        }
+
+                        // Check collision using distance
+                        const dx = helperVirus.x - targetVirus.x;
+                        const dy = helperVirus.y - targetVirus.y;
+                        const distSquared = dx * dx + dy * dy;
+                        const radiusSum = helperVirus.radius + targetVirus.radius;
+
+                        if (distSquared <= radiusSum * radiusSum) {
+                            // Helper touched a virus - kill it!
+                            const damageResult = targetVirus.takeDamage();
+
+                            if (damageResult.killed) {
+                                game.sanitizedViruses++;
+
+                                // Handle Boss kill
+                                if (damageResult.isBoss) {
+                                    game.bossKilled = true;
+                                    shake(4);
+                                    playSound(200, 0.8, 'sawtooth', 0.3);
+                                    createParticles(targetVirus.x, targetVirus.y, 80, '#000000', true);
+                                    createFloatingText(targetVirus.x, targetVirus.y, 'BOSS DEFEATED!', '#ff0000');
+                                }
+
+                                // Create small zone for visual effect (NOT player created)
+                                game.sanitizationZones.push(new SanitizationZone(targetVirus.x, targetVirus.y, false, false));
+
+                                // Particles and sound
+                                playSound(120, 0.1, 'sine', 0.1);
+                                createParticles(targetVirus.x, targetVirus.y, 15, targetVirus.colorScheme.primary);
+
+                                updateUI();
+
+                                // Check for early win after Helper kills virus
+                                checkEarlyWin();
+                            }
+                        }
+                    });
+                }
+            }
 
             // Remove destroyed viruses
             game.viruses = game.viruses.filter(v => !v.destroyed);
@@ -1417,7 +1945,10 @@
             }
         }, { passive: false });
 
-        // Start game
+        // Initialize and start game
+        initLeaderboard(); // Initialize leaderboard with defaults
+        loadGame(); // Load saved progress
+        updateUI(); // Update UI with loaded data
         initLevel();
         requestAnimationFrame(gameLoop);
     </script>
