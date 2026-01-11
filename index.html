@@ -75,6 +75,17 @@
             letter-spacing: 1px;
         }
 
+        #shots {
+            position: absolute;
+            top: 60px;
+            right: 30px;
+            color: #ffbe0b;
+            font-size: 20px;
+            font-weight: bold;
+            text-shadow: 0 0 10px #ffbe0b, 0 0 20px #ffbe0b;
+            letter-spacing: 1px;
+        }
+
         #message {
             position: absolute;
             top: 50%;
@@ -145,6 +156,7 @@
         <div id="score">SCORE: 0</div>
         <div id="level">LEVEL: 1</div>
         <div id="stats">CHAIN: 0x | SANITIZED: 0/0</div>
+        <div id="shots">SHOTS: 3</div>
         <div id="message"></div>
         <div id="info">CLICK TO DEPLOY SANITIZATION ZONE<br>Target: 50% Viral Elimination</div>
     </div>
@@ -157,6 +169,7 @@
             score: document.getElementById('score'),
             level: document.getElementById('level'),
             stats: document.getElementById('stats'),
+            shots: document.getElementById('shots'),
             message: document.getElementById('message'),
             info: document.getElementById('info')
         };
@@ -181,11 +194,13 @@
             particles: [],
             floatingTexts: [],
             isPlaying: false,
-            clickUsed: false,
+            levelCompleting: false,
+            shotsRemaining: 3,
             totalViruses: 0,
             sanitizedViruses: 0,
             chainCount: 0,
-            time: 0
+            time: 0,
+            maxParticles: 300
         };
 
         // Color palettes for viruses
@@ -259,8 +274,6 @@
 
             update(deltaTime) {
                 if (this.destroyed) return;
-
-                game.time += deltaTime;
 
                 // Handle death sequence
                 if (this.dying) {
@@ -442,11 +455,11 @@
                 this.x = x;
                 this.y = y;
                 this.radius = 0;
-                this.maxRadius = isKing ? 300 : 150;
+                this.maxRadius = isKing ? 400 : 200;
                 this.growing = true;
                 this.life = 1;
                 this.isKing = isKing;
-                this.growthRate = isKing ? 6 : 4;
+                this.growthRate = isKing ? 8 : 6;
             }
 
             update() {
@@ -456,7 +469,7 @@
                         this.growing = false;
                     }
                 } else {
-                    this.life -= 0.03;
+                    this.life -= 0.02;
                 }
                 return this.life > 0;
             }
@@ -493,8 +506,12 @@
 
             checkCollision(virus) {
                 if (virus.destroyed || virus.dying) return false;
-                const dist = Math.sqrt((this.x - virus.x) ** 2 + (this.y - virus.y) ** 2);
-                return dist <= this.radius + virus.radius;
+                // Use distance squared to avoid expensive sqrt
+                const dx = this.x - virus.x;
+                const dy = this.y - virus.y;
+                const distSquared = dx * dx + dy * dy;
+                const radiusSum = this.radius + virus.radius;
+                return distSquared <= radiusSum * radiusSum;
             }
         }
 
@@ -508,7 +525,7 @@
                 this.vx = Math.cos(angle) * speed;
                 this.vy = Math.sin(angle) * speed;
                 this.life = 1;
-                this.decay = 0.015;
+                this.decay = 0.025; // Faster decay for better performance
                 this.size = Math.random() * (isKing ? 6 : 4) + 2;
                 this.color = color;
                 this.rotation = Math.random() * Math.PI * 2;
@@ -553,7 +570,7 @@
 
             update() {
                 this.y += this.vy;
-                this.life -= 0.02;
+                this.life -= 0.03; // Faster fade for performance
             }
 
             draw() {
@@ -621,9 +638,11 @@
             }, duration);
         }
 
-        // Create particles
+        // Create particles with limit
         function createParticles(x, y, count, color, isKing = false) {
-            for (let i = 0; i < count; i++) {
+            // Limit particle creation if too many exist
+            const actualCount = Math.min(count, game.maxParticles - game.particles.length);
+            for (let i = 0; i < actualCount; i++) {
                 game.particles.push(new Particle(x, y, color, isKing));
             }
         }
@@ -639,17 +658,18 @@
             game.sanitizationZones = [];
             game.particles = [];
             game.floatingTexts = [];
-            game.clickUsed = false;
+            game.shotsRemaining = 3;
             game.sanitizedViruses = 0;
             game.chainCount = 0;
+            game.levelCompleting = false;
 
             // Increase virus count with level
-            const virusCount = 30 + game.level * 8;
+            const virusCount = 20 + game.level * 5;
             game.totalViruses = virusCount;
 
-            // Create viruses with 5% King Virus spawn rate
+            // Create viruses with 8% King Virus spawn rate
             for (let i = 0; i < virusCount; i++) {
-                const isKing = Math.random() < 0.05;
+                const isKing = Math.random() < 0.1;
                 const margin = 50;
                 const x = Math.random() * (canvas.width - margin * 2) + margin;
                 const y = Math.random() * (canvas.height - margin * 2) + margin;
@@ -662,26 +682,32 @@
 
         // Handle click
         function handleClick(e) {
-            if (!game.isPlaying || game.clickUsed) return;
+            if (!game.isPlaying || game.shotsRemaining <= 0) return;
 
             e.preventDefault();
             const rect = canvas.getBoundingClientRect();
             const x = (e.clientX || e.touches?.[0]?.clientX) - rect.left;
             const y = (e.clientY || e.touches?.[0]?.clientY) - rect.top;
 
-            // Hide info
-            ui.info.style.opacity = '0';
+            // Hide info on first shot
+            if (game.shotsRemaining === 3) {
+                ui.info.style.opacity = '0';
+            }
 
-            // Create initial sanitization zone
+            // Create sanitization zone
             game.sanitizationZones.push(new SanitizationZone(x, y));
-            game.clickUsed = true;
+            game.shotsRemaining--;
             playSanitizationSound();
             createParticles(x, y, 30, '#00ffff');
+            updateUI();
         }
 
         // Check level completion
         function checkLevelComplete() {
-            if (!game.clickUsed || game.sanitizationZones.length > 0) return;
+            if (game.levelCompleting || game.shotsRemaining > 0 || game.sanitizationZones.length > 0) return;
+
+            game.levelCompleting = true;
+            game.isPlaying = false;
 
             const percentSanitized = (game.sanitizedViruses / game.totalViruses) * 100;
 
@@ -696,28 +722,26 @@
                 showMessage(
                     `LEVEL ${game.level} PROTOCOL ACTIVATED<br>` +
                     `<span style="font-size: 32px; color: #00ff88">${Math.floor(percentSanitized)}% SANITIZED | ${game.chainCount}x CHAIN</span>`,
-                    2500
+                    1200
                 );
 
                 setTimeout(() => {
                     ui.info.style.opacity = '1';
                     initLevel();
-                }, 2500);
+                }, 1200);
             } else {
                 // Fail
                 showMessage(
                     `SANITIZATION FAILED<br>` +
                     `<span style="font-size: 32px; color: #ff0066">Only ${Math.floor(percentSanitized)}% Eliminated</span>`,
-                    2500
+                    1200
                 );
                 setTimeout(() => {
                     game.level = Math.max(1, game.level - 1);
                     ui.info.style.opacity = '1';
                     initLevel();
-                }, 2500);
+                }, 1200);
             }
-
-            game.isPlaying = false;
         }
 
         // Update UI
@@ -725,6 +749,7 @@
             ui.score.textContent = `SCORE: ${game.score}`;
             ui.level.textContent = `LEVEL: ${game.level}`;
             ui.stats.textContent = `CHAIN: ${game.chainCount}x | SANITIZED: ${game.sanitizedViruses}/${game.totalViruses}`;
+            ui.shots.textContent = `SHOTS: ${game.shotsRemaining}`;
         }
 
         // Game loop
@@ -732,16 +757,18 @@
         function gameLoop(currentTime) {
             const deltaTime = (currentTime - lastTime) / 16.67; // Normalize to 60fps
             lastTime = currentTime;
+            game.time += deltaTime;
 
             // Clear canvas with trail effect
             ctx.fillStyle = 'rgba(0, 8, 20, 0.25)';
             ctx.fillRect(0, 0, canvas.width, canvas.height);
 
-            // Update and draw viruses
-            game.viruses.forEach(virus => {
+            // Update and draw viruses (optimized loop)
+            for (let i = 0; i < game.viruses.length; i++) {
+                const virus = game.viruses[i];
                 virus.update(deltaTime);
                 virus.draw();
-            });
+            }
 
             // Update and draw sanitization zones
             game.sanitizationZones = game.sanitizationZones.filter(zone => {
@@ -757,7 +784,7 @@
                                 game.chainCount++;
 
                                 const isKing = virus.isKing;
-                                const points = isKing ? 250 : 50;
+                                const points = isKing ? 25 : 5;
                                 game.score += points;
 
                                 // Create new sanitization zone
@@ -767,13 +794,16 @@
                                 if (isKing) {
                                     playKingSound();
                                     shake(3);
-                                    createParticles(virus.x, virus.y, 80, virus.colorScheme.primary, true);
+                                    createParticles(virus.x, virus.y, 50, virus.colorScheme.primary, true);
                                     createFloatingText(virus.x, virus.y, `+${points} KING!`, '#ffd700');
                                 } else {
-                                    const pitch = 800 + Math.min(game.chainCount * 50, 800);
+                                    const pitch = 80 + Math.min(game.chainCount * 5, 80);
                                     playSound(pitch, 0.1, 'sine', 0.15);
-                                    createParticles(virus.x, virus.y, 40, virus.colorScheme.primary);
-                                    createFloatingText(virus.x, virus.y, `+${points}`, virus.colorScheme.primary);
+                                    createParticles(virus.x, virus.y, 25, virus.colorScheme.primary);
+                                    // Only show floating text for every 3rd virus to reduce overhead
+                                    if (game.sanitizedViruses % 3 === 0) {
+                                        createFloatingText(virus.x, virus.y, `+${points}`, virus.colorScheme.primary);
+                                    }
                                 }
 
                                 updateUI();
@@ -788,19 +818,25 @@
             // Remove destroyed viruses
             game.viruses = game.viruses.filter(v => !v.destroyed);
 
-            // Update and draw particles
-            game.particles = game.particles.filter(p => {
+            // Update and draw particles (batch for performance)
+            for (let i = game.particles.length - 1; i >= 0; i--) {
+                const p = game.particles[i];
                 p.update();
                 p.draw();
-                return p.life > 0;
-            });
+                if (p.life <= 0) {
+                    game.particles.splice(i, 1);
+                }
+            }
 
-            // Update and draw floating texts
-            game.floatingTexts = game.floatingTexts.filter(t => {
+            // Update and draw floating texts (batch for performance)
+            for (let i = game.floatingTexts.length - 1; i >= 0; i--) {
+                const t = game.floatingTexts[i];
                 t.update();
                 t.draw();
-                return t.life > 0;
-            });
+                if (t.life <= 0) {
+                    game.floatingTexts.splice(i, 1);
+                }
+            }
 
             // Check level completion
             checkLevelComplete();
