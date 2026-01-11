@@ -229,7 +229,7 @@
         <div id="score">SCORE: 0</div>
         <div id="level">LEVEL: 1</div>
         <div id="stats">CHAIN: 0x | SANITIZED: 0/0</div>
-        <div id="shots">SHOTS: 5</div>
+        <div id="shots">SHOTS: 4</div>
         <div id="message"></div>
         <div id="location"></div>
         <div id="info">CLICK TO DEPLOY SANITIZATION ZONE<br>Target: 70% Viral Elimination</div>
@@ -289,7 +289,7 @@
             floatingTexts: [],
             isPlaying: false,
             levelCompleting: false,
-            shotsRemaining: 5,
+            shotsRemaining: 4,
             totalViruses: 0,
             sanitizedViruses: 0,
             chainCount: 0,
@@ -411,7 +411,8 @@
                 this.vy = this.targetVY;
                 this.directionChangeTimer = Math.random() * 120 + 60;
                 this.isPanicked = false;
-                this.fleeRadius = (Math.floor(Math.random() * 10) / 10) * 150; // Randomized between 0 and 1 times normal
+                const fleeRadiusConst = 1; // (Math.floor(Math.random() * 10) / 10);
+                this.fleeRadius = fleeRadiusConst * 150; // Randomized between 0 and 1 times normal
                 this.closestZone = null;
 
                 // Animation
@@ -963,7 +964,7 @@
             game.sanitizationZones = [];
             game.particles = [];
             game.floatingTexts = [];
-            game.shotsRemaining = 5;
+            game.shotsRemaining = 4;
             game.sanitizedViruses = 0;
             game.chainCount = 0;
             game.levelCompleting = false;
@@ -1091,7 +1092,7 @@
             game.showReticle = true;
 
             // Hide info on first shot
-            if (game.shotsRemaining === 5) {
+            if (game.shotsRemaining === 4) {
                 ui.info.style.opacity = '0';
             }
 
